@@ -1,0 +1,65 @@
+\
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Phyllis Columns Uploader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <header>
+      <div class="left"><h1>Phyllis Columns Uploader</h1></div>
+      <div class="right"><a href="/api/log" class="button secondary">Download Log CSV</a></div>
+    </header>
+
+    <main>
+      <section class="controls">
+        <div class="field">
+          <label>Title</label>
+          <input id="title" type="text" placeholder="Enter title..."/>
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input id="date" type="date"/>
+          <span id="date-human"></span>
+        </div>
+        <div class="field small">
+          <label>Category</label>
+          <input id="category" type="text" disabled/>
+        </div>
+        <div class="field small">
+          <label>Author</label>
+          <input id="author" type="text" disabled/>
+        </div>
+        <div class="actions">
+          <button id="cleanup" class="secondary">Cleanup</button>
+          <button id="reocr" class="secondary">Re-OCR PDF</button>
+          <button id="draft">Save Draft & Next</button>
+          <button id="publish" class="primary">Publish & Next</button>
+          <button id="skip" class="danger">Skip</button>
+        </div>
+      </section>
+
+      <section class="panes">
+        <div class="pane viewer">
+          <div class="viewer-toolbar">
+            <button id="show-pdf" class="secondary">Show PDF</button>
+            <button id="show-docx" class="secondary">Show DOCX</button>
+          </div>
+          <iframe id="doc-viewer" src="" frameborder="0"></iframe>
+        </div>
+        <div class="pane editor">
+          <textarea id="editor" spellcheck="true"></textarea>
+        </div>
+      </section>
+
+      <footer>
+        <div id="status"></div>
+        <div id="meta"></div>
+      </footer>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
