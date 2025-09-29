@@ -15,7 +15,7 @@ if not PROGRESS_LOG:
     # Default to progress_log.csv in project root
     PROGRESS_LOG = os.path.join(os.path.dirname(os.path.dirname(__file__)), "progress_log.csv")
 PROGRESS_LOG = PROGRESS_LOG.strip()
-CATEGORY_NAME = os.getenv("WP_CATEGORY_NAME", "")
+CATEGORY_NAME = os.getenv("WP_CATEGORY_NAME", "Phyllis Schlafly Report Column")  # Default to hardcoded name
 AUTHOR_NAME = os.getenv("WP_AUTHOR_NAME", "")
 
 # Debug: Print configuration

@@ -7,7 +7,9 @@ WP_BASE = os.getenv("WP_BASE","").rstrip("/")
 WP_USERNAME = os.getenv("WP_USERNAME","")
 WP_APP_PASSWORD = os.getenv("WP_APP_PASSWORD","")
 WP_AUTHOR_NAME = os.getenv("WP_AUTHOR_NAME","").strip()
-WP_CATEGORY_NAME = os.getenv("WP_CATEGORY_NAME","").strip()
+WP_CATEGORY_ID = os.getenv("WP_CATEGORY_ID", "72")  # Default to hardcoded ID
+WP_CATEGORY_NAME = os.getenv("WP_CATEGORY_NAME", "Phyllis Schlafly Report Column")  # Default to hardcoded name
+WP_CATEGORY_SLUG = os.getenv("WP_CATEGORY_SLUG", "phyllis-schlafly-report-column")  # Default to hardcoded slug
 
 API = f"{WP_BASE}/wp-json/wp/v2"
 session = requests.Session()
@@ -29,6 +31,9 @@ print(f"DEBUG WP - WP_BASE: '{WP_BASE}'")
 print(f"DEBUG WP - WP_USERNAME: '{WP_USERNAME}'")
 print(f"DEBUG WP - WP_APP_PASSWORD: {'*' * len(WP_APP_PASSWORD) if WP_APP_PASSWORD else 'EMPTY'}")
 print(f"DEBUG WP - API URL: '{API}'")
+print(f"DEBUG WP - Category ID: '{WP_CATEGORY_ID}'")
+print(f"DEBUG WP - Category Name: '{WP_CATEGORY_NAME}'")
+print(f"DEBUG WP - Category Slug: '{WP_CATEGORY_SLUG}'")
 
 def resolve_author_id():
     if not WP_AUTHOR_NAME: return None
@@ -59,67 +64,26 @@ def resolve_author_id():
         return None
 
 def ensure_category_id():
-    if not WP_CATEGORY_NAME: return None
+    """Returns the hardcoded category ID instead of searching for it."""
     try:
-        print(f"DEBUG WP - Searching for category: '{WP_CATEGORY_NAME}'")
-        r = session.get(f"{API}/categories", params={"search": WP_CATEGORY_NAME, "per_page": 100}, timeout=30)
-        print(f"DEBUG WP - Category search response status: {r.status_code}")
-        print(f"DEBUG WP - Category search response text: {r.text[:500]}")
-        print(f"DEBUG WP - Category search response headers: {dict(r.headers)}")
-        
-        if r.status_code in (200,201):
-            if r.text.strip() == "":
-                print("DEBUG WP - Empty response body for category search")
-                return None
-            try:
-                categories = r.json()
-                print(f"DEBUG WP - Found {len(categories)} categories")
-                for c in categories:
-                    print(f"DEBUG WP - Checking category: name='{c.get('name')}', id={c.get('id')}")
-                    if c.get("name")==WP_CATEGORY_NAME: 
-                        print(f"DEBUG WP - Found existing category ID: {c.get('id')}")
-                        return c.get("id")
-            except ValueError as e:
-                print(f"DEBUG WP - Failed to parse category search JSON: {e}")
-                print(f"DEBUG WP - Raw response: '{r.text}'")
-                return None
-        
-        # Try getting all categories if search failed
-        print(f"DEBUG WP - Search failed, trying to get all categories...")
-        r_all = session.get(f"{API}/categories", params={"per_page": 100}, timeout=30)
-        print(f"DEBUG WP - All categories response status: {r_all.status_code}")
-        if r_all.status_code == 200 and r_all.text.strip():
-            try:
-                all_categories = r_all.json()
-                print(f"DEBUG WP - Found {len(all_categories)} total categories")
-                for c in all_categories:
-                    print(f"DEBUG WP - Category: '{c.get('name')}' (ID: {c.get('id')})")
-                    if c.get("name")==WP_CATEGORY_NAME: 
-                        print(f"DEBUG WP - Found category in full list! ID: {c.get('id')}")
-                        return c.get("id")
-            except ValueError as e:
-                print(f"DEBUG WP - Failed to parse all categories JSON: {e}")
-        
-        print(f"DEBUG WP - Creating new category: '{WP_CATEGORY_NAME}'")
-        r2 = session.post(f"{API}/categories", json={"name": WP_CATEGORY_NAME}, timeout=30)
-        print(f"DEBUG WP - Category creation response status: {r2.status_code}")
-        print(f"DEBUG WP - Category creation response text: {r2.text[:200]}")
-        
-        if r2.status_code in (200,201): 
-            try:
-                return r2.json().get("id")
-            except ValueError as e:
-                print(f"DEBUG WP - Failed to parse category creation JSON: {e}")
-                return None
-        return None
-    except Exception as e:
-        print(f"DEBUG WP - Exception in ensure_category_id: {e}")
+        category_id = int(WP_CATEGORY_ID)
+        print(f"DEBUG WP - Using hardcoded category: ID={category_id}, Name='{WP_CATEGORY_NAME}', Slug='{WP_CATEGORY_SLUG}'")
+        return category_id
+    except (ValueError, TypeError) as e:
+        print(f"DEBUG WP - Invalid category ID '{WP_CATEGORY_ID}': {e}")
         return None
 
 def create_post(title: str, content: str, date_iso: str, status: str="publish"):
     payload = {"title": title, "content": content, "status": status, "date": date_iso}
     cat_id = ensure_category_id()
     if cat_id: payload["categories"] = [cat_id]
+
+    featured_id = os.getenv("WP_FEATURED_IMAGE_ID")
+    if featured_id: 
+        try:
+            payload["featured_media"] = int(featured_id)
+        except ValueError:
+            pass
 
     author_id = resolve_author_id()
     tried_author = False

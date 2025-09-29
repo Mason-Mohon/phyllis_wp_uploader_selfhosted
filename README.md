@@ -12,8 +12,10 @@ Copy .env.example to .env and fill:
 - SOURCE_ROOT
 - WP_BASE (https://phyllisschlafly.com)
 - WP_USERNAME, WP_APP_PASSWORD
-- WP_AUTHOR_NAME, WP_CATEGORY_NAME
+- WP_AUTHOR_NAME, WP_CATEGORY_NAME (defaults to "Phyllis Schlafly Report Column")
+- WP_CATEGORY_ID (defaults to "72"), WP_CATEGORY_SLUG (defaults to "phyllis-schlafly-report-column")
 
 ## Run
+conda activate cols
 export FLASK_APP=app.app:app
 flask run --port 5055 --reload
