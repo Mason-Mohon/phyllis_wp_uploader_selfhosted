@@ -1,4 +1,3 @@
-\
 import re, unicodedata
 LIGATURES = {"\ufb01":"fi","\ufb02":"fl"}
 GUILLEMETS = {"«":"\"","»":"\"","‹":"'", "›":"'"}

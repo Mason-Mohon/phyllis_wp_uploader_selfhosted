@@ -1,4 +1,3 @@
-\
 import fitz, docx, mammoth
 
 def extract_pdf_text(pdf_path: str) -> str:
