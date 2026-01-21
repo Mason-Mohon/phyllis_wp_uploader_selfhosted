@@ -2,7 +2,7 @@
 import os, re, csv, time
 from datetime import datetime, timedelta, timezone
 
-DATE_RE = re.compile(r'^PSC_(\d{4})_(\d{2})_(\d{2})$')
+DATE_RE = re.compile(r'^PSC_(\d{4})_(\d{2})_(\d{2})')
 
 def iso_local_noon(date_str: str) -> str:
     y, m, d = map(int, date_str.split('-'))

@@ -1,5 +1,5 @@
 \
-import os, requests
+import os, requests, csv, html, io
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -107,3 +107,78 @@ def create_post(title: str, content: str, date_iso: str, status: str="publish"):
 
     data = r.json()
     return {"id": data.get("id"), "URL": data.get("link"), "author_set": author_set}
+
+def _chunked(seq, size: int):
+    for i in range(0, len(seq), size):
+        yield seq[i:i + size]
+
+def _get_posts_page(category_id: int, page: int, per_page: int, status: str):
+    params = {
+        "categories": category_id,
+        "per_page": per_page,
+        "page": page,
+        "status": status,
+        "_fields": "id,title,date,categories,link",
+    }
+    r = session.get(f"{API}/posts", params=params, timeout=45)
+    r.raise_for_status()
+    total_pages = int(r.headers.get("X-WP-TotalPages", "1"))
+    return r.json(), total_pages
+
+def fetch_posts_by_category(category_id: int, status: str="publish"):
+    posts = []
+    page = 1
+    per_page = 100
+    total_pages = 1
+    while page <= total_pages:
+        page_posts, total_pages = _get_posts_page(category_id, page, per_page, status)
+        if not page_posts:
+            break
+        posts.extend(page_posts)
+        page += 1
+    return posts
+
+def fetch_category_map(category_ids):
+    if not category_ids:
+        return {}
+    cat_map = {}
+    for chunk in _chunked(list(category_ids), 100):
+        params = {
+            "include": ",".join(str(cid) for cid in chunk),
+            "per_page": 100,
+            "_fields": "id,name",
+        }
+        r = session.get(f"{API}/categories", params=params, timeout=30)
+        r.raise_for_status()
+        for c in r.json():
+            cat_map[c.get("id")] = c.get("name", "")
+    return cat_map
+
+def export_posts_csv(category_id: int, status: str="publish") -> str:
+    posts = fetch_posts_by_category(category_id, status=status)
+    all_other_cat_ids = {
+        cid for p in posts for cid in p.get("categories", []) if cid != category_id
+    }
+    cat_map = fetch_category_map(all_other_cat_ids)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "post_id",
+        "title",
+        "published_date",
+        "additional_category_ids",
+        "additional_category_names",
+    ])
+    for p in posts:
+        cat_ids = [cid for cid in p.get("categories", []) if cid != category_id]
+        cat_names = [cat_map.get(cid, "") for cid in cat_ids]
+        title = html.unescape((p.get("title") or {}).get("rendered", "")).strip()
+        writer.writerow([
+            p.get("id", ""),
+            title,
+            p.get("date", ""),
+            ",".join(str(cid) for cid in cat_ids),
+            ",".join(name for name in cat_names if name),
+        ])
+    return output.getvalue()

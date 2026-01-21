@@ -1,7 +1,7 @@
 import os
 import traceback
 from urllib.parse import quote
-from flask import Flask, jsonify, request, send_file, render_template
+from flask import Flask, jsonify, request, send_file, render_template, Response
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -133,6 +133,33 @@ def api_skip(): return _post_common("skip")
 def api_log():
     utils.ensure_csv(PROGRESS_LOG)
     return send_file(PROGRESS_LOG, as_attachment=True, download_name=os.path.basename(PROGRESS_LOG))
+
+@app.get("/api/wp/export")
+def api_wp_export():
+    category_id_param = request.args.get("category_id", "").strip()
+    if category_id_param:
+        try:
+            category_id = int(category_id_param)
+        except ValueError:
+            return jsonify({"error": "category_id must be an integer"}), 400
+    else:
+        category_id = wp_client.ensure_category_id()
+        if not category_id:
+            return jsonify({"error": "WP_CATEGORY_ID not configured"}), 500
+
+    try:
+        csv_text = wp_client.export_posts_csv(category_id)
+    except Exception as e:
+        print(f"ERROR in api_wp_export: {str(e)}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+    filename = f"wp_posts_category_{category_id}.csv"
+    return Response(
+        csv_text,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 @app.get("/source/pdf")
 def source_pdf():
