@@ -18,3 +18,7 @@ env/
 
 # OS junk
 .DS_Store
+edreporter.ods
+.gitignore
+education_reporter_unmatched.csv
+education_reporter_matched.csv
